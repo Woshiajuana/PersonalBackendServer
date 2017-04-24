@@ -9,6 +9,7 @@ const jwt = require('jsonwebtoken');
 /**引入数据库工具库*/
 const models = require('../database/db');
 const users = models.user;
+const articles = models.article;
 
 /**引入express包*/
 const express = require('express');
@@ -16,12 +17,11 @@ const express = require('express');
 /**创建路由*/
 const router = express.Router();
 
+/**验证token的中间键*/
+const check_api_token = require('./check_api_token');
+
 /**创建接口*/
 /**验证后台管理员帐号*/
-router.get('/123',(req,res) => {
-    /**这里的req.body能够使用就在index.js中引入了const bodyParser = require('body-parser')*/
-    res.send('createAccount successedsasasxaxaxxs');
-});
 router.post('/ajuan_backstage/login',(req,res) => {
     /**这里的req.body能够使用就在index.js中引入了const bodyParser = require('body-parser')*/
     let user = {
@@ -48,17 +48,40 @@ router.post('/ajuan_backstage/login',(req,res) => {
     });
 });
 
-/**
-var token = rq.body.token || rq.query.token || rq.headers["x-access-token"]; // 从body或query或者header中获取token
- jwt.verify(token, secretOrPrivateKey, function (err, decode) {
-            if (err) {  //  时间失效的时候/ 伪造的token
-               rs.json({err:err})
-            } else {
-                rq.decode = decode;
-                console.log(decode.msg);   // today  is  a  good  day
-                next();
-            }
-        })
- * */
+/**获取文章*/
+router.get('/ajuan_backstage/fetchArticle',check_api_token,(req,res) => {
+    let query = req.query.tab == 'all' ? {} : {article_type: req.query.tab};
+    articles.find(query,(err, doc) => {
+       if(doc){
+           res.json({status: 1, msg: '获取成功', data: doc});
+       }else{
+           res.json({status: 0, msg: '获取文章信息失败'});
+       }
+    });
+});
+
+/**创建文章*/
+router.get('/ajuan_backstage/insertArticle',check_api_token,(req,res) => {
+    let article = JSON.parse(req.query.article);
+    articles.create(article,(err, doc) => {
+        if(err){
+            res.json({status: 0, msg: '提交文章失败'});
+        }else {
+            res.json({status: 1, msg: '提交文章成功'});
+        }
+    });
+});
+
+/**删除文章*/
+router.get('/ajuan_backstage/removeArticle',check_api_token,(req,res) => {
+    let article_id = req.query.article_id;
+    articles.remove({_id:article_id},(err, doc) => {
+        if(err){
+            res.json({status: 0, msg: '删除文章失败'});
+        }else {
+            res.json({status: 1, msg: '删除文章成功'});
+        }
+    })
+});
 
 module.exports = router;
