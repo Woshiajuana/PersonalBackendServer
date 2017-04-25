@@ -3,6 +3,9 @@
  * 接口工具库
  */
 
+/**引入分页查询工具库*/
+const dbHelper = require('./page-query');
+
 /**引入token工具*/
 const jwt = require('jsonwebtoken');
 
@@ -28,6 +31,14 @@ router.post('/ajuan_backstage/login',(req,res) => {
         user_name: req.query.user_name,
         user_password: req.query.user_password
     };
+    if(!req.query.user_name) {
+        res.json({status: 0, msg: '请输入帐号'});
+        return;
+    }
+    if(!req.query.user_password) {
+        res.json({status: 0, msg: '请输入密码'});
+        return;
+    }
     users.count(user, function(err, doc){
         if(doc == 1){
             /**创建token*/
@@ -50,18 +61,33 @@ router.post('/ajuan_backstage/login',(req,res) => {
 
 /**获取文章*/
 router.get('/ajuan_backstage/fetchArticle',check_api_token,(req,res) => {
-    let query = req.query.tab == 'all' ? {} : {article_type: req.query.tab};
-    articles.find(query,(err, doc) => {
-       if(doc){
-           res.json({status: 1, msg: '获取成功', data: doc});
-       }else{
-           res.json({status: 0, msg: '获取文章信息失败'});
-       }
+    let article_type = req.query.tab == 'all' ? '' : req.query.tab;
+    let page = +req.query.page_num || 1;
+    let rows = +req.query.page_size || 12;
+    let key_word = req.query.key_word;
+    let query = {};
+    if(article_type) query.article_type = article_type;
+    if(key_word) query.article_title = key_word;
+    dbHelper.pageQuery(page, rows, articles, '', query, {}, (error, $page) => {
+        if(error){
+            res.json({status: 0, msg: '获取信息失败'});
+        }else{
+            res.json({
+                status:1,
+                data: $page.results,
+                article_total: $page.total,
+                page_count: Math.ceil($page.pageCount)
+            });
+        }
     });
 });
 
 /**创建文章*/
 router.get('/ajuan_backstage/insertArticle',check_api_token,(req,res) => {
+    if(!req.query.article){
+        res.json({status: 0, msg: '请把信息填写完整'});
+        return;
+    }
     let article = JSON.parse(req.query.article);
     articles.create(article,(err, doc) => {
         if(err){
