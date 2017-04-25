@@ -67,7 +67,7 @@ router.get('/ajuan_backstage/fetchArticle',check_api_token,(req,res) => {
     let key_word = req.query.key_word;
     let query = {};
     if(article_type) query.article_type = article_type;
-    if(key_word) query.article_title = key_word;
+    if(key_word) query.article_title =  eval("/"+key_word+"/ig");
     dbHelper.pageQuery(page, rows, articles, '', query, {}, (error, $page) => {
         if(error){
             res.json({status: 0, msg: '获取信息失败'});
