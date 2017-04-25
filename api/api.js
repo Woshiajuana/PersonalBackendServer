@@ -59,7 +59,44 @@ router.post('/ajuan_backstage/login',(req,res) => {
     });
 });
 
-/**获取文章*/
+/**获取文章数据*/
+router.get('/ajuan/fetchArticle',(req,res) => {
+    let article_type = req.query.tab == 'all' ? '' : req.query.tab;
+    let page = +req.query.page_num || 1;
+    let rows = +req.query.page_size || 12;
+    let key_word = req.query.key_word;
+    let query = {};
+    if(article_type) query.article_type = article_type;
+    if(key_word) query.article_title =  eval("/"+key_word+"/ig");
+    dbHelper.pageQuery(page, rows, articles, '', query, {}, (error, $page) => {
+        if(error){
+            res.json({status: 0, msg: '获取信息失败'});
+        }else{
+            res.json({
+                status:1,
+                data: $page.results,
+                article_total: $page.total,
+                page_count: Math.ceil($page.pageCount)
+            });
+        }
+    });
+});
+
+/**根据文章_id获取文章数据*/
+router.get('/ajuan/fetchDetail',(req,res) => {
+    let _id = req.query.article_id;
+    articles.find({
+        _id: _id
+    },(err,doc) => {
+        if(err){
+            res.json({status:0,msg:'获取信息失败'})
+        }else{
+            res.json({status:1,data:doc,msg:'获取信息成功'});
+        }
+    });
+});
+
+/**后台获取文章数据*/
 router.get('/ajuan_backstage/fetchArticle',check_api_token,(req,res) => {
     let article_type = req.query.tab == 'all' ? '' : req.query.tab;
     let page = +req.query.page_num || 1;
